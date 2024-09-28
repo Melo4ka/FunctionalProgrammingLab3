@@ -1,8 +1,8 @@
 (ns ru.meldren.functionalprogramming.lab3.main
   (:require [clojure.string :as str]
-            [ru.meldren.functionalprogramming.lab3.logger :refer :all]
-            [ru.meldren.functionalprogramming.lab3.input :refer :all]
-            [ru.meldren.functionalprogramming.lab3.interpolation :refer :all])
+            [ru.meldren.functionalprogramming.lab3.logger :refer [log-new-line]]
+            [ru.meldren.functionalprogramming.lab3.input :refer [request-double request-input request-int]]
+            [ru.meldren.functionalprogramming.lab3.interpolation :refer [interpolate-by-lagrange interpolate-by-linear]])
   (:import (ru.meldren.functionalprogramming.lab3.input InputRequester)
            (ru.meldren.functionalprogramming.lab3.interpolation Point)
            (ru.meldren.functionalprogramming.lab3.logger ConsoleLogger)))

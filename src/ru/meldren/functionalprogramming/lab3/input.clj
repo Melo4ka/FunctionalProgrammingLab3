@@ -1,6 +1,6 @@
 (ns ru.meldren.functionalprogramming.lab3.input
   (:require [clojure.string :as str]
-            [ru.meldren.functionalprogramming.lab3.logger :refer :all]))
+            [ru.meldren.functionalprogramming.lab3.logger :refer [log log-new-line]]))
 
 (defprotocol IInputRequester
   (request-input [this message parser])
