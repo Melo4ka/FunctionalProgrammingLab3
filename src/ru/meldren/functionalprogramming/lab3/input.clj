@@ -14,12 +14,19 @@
   IInputRequester
   (request-input [this message parser]
     (log logger (str message ": "))
-    (let [input (str/trim (read-line))]
-      (try
-        (parser input)
-        (catch Exception _
-          (log-new-line logger "Формат введенных вами данных не соответствует требуемому.")
-          (request-input this message parser)))))
+    (let [input (read-line)]
+      (if (nil? input)
+        (do
+          (log-new-line logger "Завершение программы.")
+          (System/exit 0))
+        (let [trimmed-input (str/trim input)]
+          (if (empty? trimmed-input)
+            (request-input this message parser)
+            (try
+              (parser trimmed-input)
+              (catch Exception _
+                (log-new-line logger "Формат введенных вами данных не соответствует требуемому.")
+                (request-input this message parser))))))))
 
   (request-string [this message]
     (request-input this message identity))
