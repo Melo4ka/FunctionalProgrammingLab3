@@ -1,20 +1,37 @@
 (ns ru.meldren.functionalprogramming.lab3.main
   (:require [clojure.string :as str]
             [clojure.tools.cli :refer [parse-opts]]
-            [ru.meldren.functionalprogramming.lab3.logger :refer [log-new-line]]
-            [ru.meldren.functionalprogramming.lab3.input :refer [request-double request-input request-int]]
+            [ru.meldren.functionalprogramming.lab3.input :refer [request-input]]
             [ru.meldren.functionalprogramming.lab3.interpolation :refer [interpolate-by-lagrange interpolate-by-linear]])
-  (:import (ru.meldren.functionalprogramming.lab3.input InputRequester)
-           (ru.meldren.functionalprogramming.lab3.interpolation Point)
-           (ru.meldren.functionalprogramming.lab3.logger ConsoleLogger)))
+  (:import (ru.meldren.functionalprogramming.lab3.interpolation Point)))
 
-(def logger (ConsoleLogger.))
+(def algorithms {"linear"   interpolate-by-linear
+                 "lagrange" interpolate-by-lagrange})
 
-(def algorithms
-  [{:name        "linear"
-    :interpolate interpolate-by-linear}
-   {:name        "lagrange"
-    :interpolate interpolate-by-lagrange}])
+(def cli-options
+  [["-g" "--algorithm NAME" "Interpolation algorithm names"
+    :id :algorithms
+    :multi true
+    :default []
+    :update-fn #(conj %1 (str/lower-case %2))
+    :validate [#(contains? algorithms %) (str "Must be an algorithm name (" (str/join ", " (keys algorithms)) ")")]]
+   ["-p" "--points NUMBER" "Points number"
+    :id :points
+    :parse-fn #(Integer/parseInt %)
+    :validate [#(<= 2 % 12) "Must be a number between 2 and 12"]]
+   ["-a" "--argument NUMBER" "Interpolation argument"
+    :id :argument
+    :parse-fn #(Integer/parseInt %)]
+   ["-h" "--help"]])
+
+(defn- usage [options-summary]
+  (->> ["Functional programming laboratory work #3:"
+        ""
+        "Usage: program-name options"
+        ""
+        "Options:"
+        options-summary]
+       (str/join \newline)))
 
 (defn- subscript [n]
   (if (< n 10)
@@ -28,52 +45,33 @@
         (Point. x y))
       (throw (IllegalArgumentException.)))))
 
-(defn- request-points [requester n]
+(defn- request-points [n]
   (doall
     (for [i (range n)]
       (let [subscript-number (subscript (inc i))]
-        (request-input requester (str "Enter point (x" subscript-number " и y" subscript-number ")") parse-point)))))
-
-(def cli-options
-  [["-a" "--argument NUMBER" "Interpolation argument"
-    :id :argument
-    :parse-fn #(Integer/parseInt %)]
-   ["-p" "--points NUMBER" "Points number"
-    :id :points
-    :parse-fn #(Integer/parseInt %)
-    :validate [#(< 2 % 12) "Must be a number between 2 and 12"]]
-   ["-m" "--algorithm NAME" "Interpolation algorithm names"
-    :id :algorithms
-    :multi true
-    :default []
-    :update-fn conj
-    :validate [#(some (fn [algorithm] (= (:name algorithm) %)) algorithms) "Must be an algorithm name"]]])
-
-(defn error-msg [errors]
-  (str "The following errors occurred while parsing your command:\n\n"
-       (clojure.string/join \newline errors)))
+        (request-input (str "Enter point (x" subscript-number " y" subscript-number ")") parse-point)))))
 
 (defn validate-args [args]
-  (let [{:keys [options _ errors _]} (parse-opts args cli-options)]
+  (let [{:keys [options _ errors summary]} (parse-opts args cli-options)]
     (cond
-      errors
-      {:exit-message (error-msg errors)}
+      (:help options)
+      {:exit-message (usage summary)}
 
-      (or (empty? (:algorithm options)) (nil? (:points options)))
-      {:exit-message "At least one algorithm name and number of points are required."}
+      errors
+      {:exit-message (str "The following errors occurred while parsing your command:\n" (str/join \newline errors))}
+
+      (or (empty? (:algorithms options)) (nil? (:points options)) (nil? (:argument options)))
+      {:exit-message "At least one algorithm name, number of points and interpolation argument are required."}
 
       :else
       {:options options})))
 
-
 (defn -main [& args]
-  (let [{:keys [options exit-message]} (validate-args args)
-        requester (InputRequester. logger)]
+  (let [{:keys [options exit-message]} (validate-args args)]
     (if exit-message
       (println exit-message)
       (while true
-        (let [points (request-points requester (:points options))]
+        (let [points (request-points (:points options))]
           (doseq [algorithm (:algorithms options)]
-            (let [interpolate (:interpolate ((keyword algorithm) algorithms))]
-              (log-new-line logger (str "Результат интерполяции алгоритмом " algorithm-name ": "
-                                        (interpolate points x-value))))))))))
+            (let [interpolate (get algorithms algorithm)]
+              (println (str (str/capitalize algorithm) " interpolation result: " (interpolate points (:argument options)))))))))))
