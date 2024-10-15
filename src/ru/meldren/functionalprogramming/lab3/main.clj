@@ -24,6 +24,8 @@
     :parse-fn #(Integer/parseInt %)]
    ["-h" "--help"]])
 
+(def points (ref []))
+
 (defn- usage [options-summary]
   (->> ["Functional programming laboratory work #3:"
         ""
@@ -45,11 +47,12 @@
         (Point. x y))
       (throw (IllegalArgumentException.)))))
 
-(defn- request-points [n]
-  (doall
-    (for [i (range n)]
-      (let [subscript-number (subscript (inc i))]
-        (request-input (str "Enter point (x" subscript-number " y" subscript-number ")") parse-point)))))
+(defn- request-point [p]
+  (let [new-point (request-input "Enter point (x y)" parse-point)]
+    (dosync
+      (alter points conj new-point)
+      (when (> (count @points) p)
+        (alter points #(vec (rest %)))))))
 
 (defn validate-args [args]
   (let [{:keys [options _ errors summary]} (parse-opts args cli-options)]
@@ -71,7 +74,8 @@
     (if exit-message
       (println exit-message)
       (while true
-        (let [points (request-points (:points options))]
+        (request-point (:points options))
+        (when (>= (count @points) (:points options))
           (doseq [algorithm (:algorithms options)]
-            (let [interpolate (get algorithms algorithm)]
-              (println (str (str/capitalize algorithm) " interpolation result: " (interpolate points (:argument options)))))))))))
+            (println (str (str/capitalize algorithm) " interpolation result: "
+                          ((get algorithms algorithm) @points (:argument options))))))))))

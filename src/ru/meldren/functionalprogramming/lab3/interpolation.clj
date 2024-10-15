@@ -3,10 +3,10 @@
 (defrecord Point [x y])
 
 (defn interpolate-by-linear [points x]
-  (let [p0 (first points)
-        p1 (second points)
-        t (/ (- x (:x p0)) (- (:x p1) (:x p0)))]
-    (+ (:y p0) (* t (- (:y p1) (:y p0))))))
+  (let [last-points (take-last 2 points)
+        [p0 p1] last-points]
+    (let [t (/ (- x (:x p0)) (- (:x p1) (:x p0)))]
+      (+ (:y p0) (* t (- (:y p1) (:y p0)))))))
 
 (defn lagrange-coefficient [points i x]
   (reduce
