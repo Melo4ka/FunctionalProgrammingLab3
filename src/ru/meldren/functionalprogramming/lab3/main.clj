@@ -35,11 +35,6 @@
         options-summary]
        (str/join \newline)))
 
-(defn- subscript [n]
-  (if (< n 10)
-    (char (+ (int \u2080) n))
-    (str/join (map subscript (map #(Character/digit ^char % 10) (str n))))))
-
 (defn- parse-point [input]
   (let [numbers (str/split input #" ")]
     (if (= (count numbers) 2)
@@ -48,11 +43,10 @@
       (throw (IllegalArgumentException.)))))
 
 (defn- request-point [p]
-  (let [new-point (request-input "Enter point (x y)" parse-point)]
-    (dosync
-      (alter points conj new-point)
-      (when (> (count @points) p)
-        (alter points #(vec (rest %)))))))
+  (dosync
+    (alter points conj (request-input "Enter point (x y)" parse-point))
+    (when (> (count @points) p)
+      (alter points #(vec (rest %))))))
 
 (defn validate-args [args]
   (let [{:keys [options _ errors summary]} (parse-opts args cli-options)]
