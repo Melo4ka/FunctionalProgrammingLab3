@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]))
 
 (defn request-input [message parser]
-  (println (str message ": "))
+  (println (str message ":"))
   (let [input (read-line)]
     (if (nil? input)
       (System/exit 0)
@@ -37,4 +37,4 @@
   (request-number message #(Long/parseLong %) range))
 
 (defn request-double [message range]
-  (request-number message #(Double/parseDouble (clojure.string/replace % #"," ".")) range))
+  (request-number message #(Double/parseDouble (str/replace % #"," ".")) range))
