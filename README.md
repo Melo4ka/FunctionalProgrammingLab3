@@ -77,7 +77,7 @@
     (range (count points))))
 ```
 
-## Пример одного цикла работы программы
+## Пример работы программы со всеми алгоритмами и шагом, равным единице
 
 ```
 meldren@Mac-Sergej FunctionalProgrammingLab3 % clj -M -m ru.meldren.functionalprogramming.lab3.main -a linear -a lagrange 
