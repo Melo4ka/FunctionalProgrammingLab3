@@ -2,26 +2,25 @@
   (:require [clojure.string :as str]
             [clojure.tools.cli :refer [parse-opts]]
             [ru.meldren.functionalprogramming.lab3.input :refer [request-input]]
-            [ru.meldren.functionalprogramming.lab3.interpolation :refer [interpolate-by-lagrange interpolate-by-linear]])
-  (:import (ru.meldren.functionalprogramming.lab3.interpolation Point)))
+            [ru.meldren.functionalprogramming.lab3.interpolation :refer [interpolate-by-lagrange interpolate-by-linear interpolate-range]])
+  (:import (java.util Locale)
+           (ru.meldren.functionalprogramming.lab3.interpolation Point)))
 
-(def algorithms {"linear"   interpolate-by-linear
-                 "lagrange" interpolate-by-lagrange})
+(def algorithms
+  {"linear"   {:interpolate interpolate-by-linear :window-size 2}
+   "lagrange" {:interpolate interpolate-by-lagrange :window-size 4}})
 
 (def cli-options
-  [["-g" "--algorithm NAME" "Interpolation algorithm names"
+  [["-a" "--algorithm NAME" "Interpolation algorithm name"
     :id :algorithms
     :multi true
     :default []
     :update-fn #(conj %1 (str/lower-case %2))
     :validate [#(contains? algorithms %) (str "Must be an algorithm name (" (str/join ", " (keys algorithms)) ")")]]
-   ["-p" "--points NUMBER" "Points number"
-    :id :points
-    :parse-fn #(Integer/parseInt %)
-    :validate [#(<= 2 % 12) "Must be a number between 2 and 12"]]
-   ["-a" "--argument NUMBER" "Interpolation argument"
-    :id :argument
-    :parse-fn #(Integer/parseInt %)]
+   ["-s" "--step NUMBER" "Step size for point calculation"
+    :id :step
+    :default 1.0
+    :parse-fn #(Double/parseDouble %)]
    ["-h" "--help"]])
 
 (def points (ref []))
@@ -35,19 +34,6 @@
         options-summary]
        (str/join \newline)))
 
-(defn- parse-point [input]
-  (let [numbers (str/split input #" ")]
-    (if (= (count numbers) 2)
-      (let [[x y] (map #(Double/parseDouble %) numbers)]
-        (Point. x y))
-      (throw (IllegalArgumentException.)))))
-
-(defn- request-point [p]
-  (dosync
-    (alter points conj (request-input "Enter point (x y)" parse-point))
-    (when (> (count @points) p)
-      (alter points #(vec (rest %))))))
-
 (defn validate-args [args]
   (let [{:keys [options _ errors summary]} (parse-opts args cli-options)]
     (cond
@@ -57,19 +43,42 @@
       errors
       {:exit-message (str "The following errors occurred while parsing your command:\n" (str/join \newline errors))}
 
-      (or (empty? (:algorithms options)) (nil? (:points options)) (nil? (:argument options)))
-      {:exit-message "At least one algorithm name, number of points and interpolation argument are required."}
+      (empty? (:algorithms options))
+      {:exit-message "At least one algorithm name is required."}
 
       :else
       {:options options})))
+
+(defn- find-max-window-size [algorithm-names]
+  (apply max (map #(get-in algorithms [% :window-size]) algorithm-names)))
+
+(defn- parse-point [input]
+  (let [numbers (str/split input #" ")]
+    (if (= (count numbers) 2)
+      (let [[x y] (map #(Double/parseDouble %) numbers)]
+        (Point. x y))
+      (throw (IllegalArgumentException.)))))
+
+(defn- request-point [max-window-size]
+  (dosync
+    (alter points conj (request-input "Enter point (x y)" parse-point))
+    (when (> (count @points) max-window-size)
+      (alter points #(vec (rest %))))))
+
+(defn- print-values [key result]
+  (println (str/join "\t" (map #(String/format Locale/ENGLISH "%.2f" (into-array Object [(key %)])) result))))
 
 (defn -main [& args]
   (let [{:keys [options exit-message]} (validate-args args)]
     (if exit-message
       (println exit-message)
-      (while true
-        (request-point (:points options))
-        (when (>= (count @points) (:points options))
-          (doseq [algorithm (:algorithms options)]
-            (println (str (str/capitalize algorithm) " interpolation result: "
-                          ((get algorithms algorithm) @points (:argument options))))))))))
+      (let [max-window-size (find-max-window-size (:algorithms options))]
+        (while true
+          (request-point max-window-size)
+          (doseq [algorithm-name (:algorithms options)]
+            (let [window-size (get-in algorithms [algorithm-name :window-size])]
+              (when (>= (count @points) window-size)
+                (let [result (interpolate-range @points (:step options) window-size (get-in algorithms [algorithm-name :interpolate]))]
+                  (println (str (str/capitalize algorithm-name) " interpolation result:"))
+                  (print-values :x result)
+                  (print-values :y result))))))))))

@@ -10,7 +10,7 @@
 
 ## Требования
 
-Реализовать лабораторную работу по предмету "Вычислительная математика" посвящённую аппроксимации со следующими
+Реализовать лабораторную работу по предмету "Вычислительная математика" посвященную интерполяции со следующими
 дополнениями:
 
 1. Реализовать методы интерполяции:
@@ -18,8 +18,7 @@
     * Метод Лагранжа
 2. Настройки программы должны задаваться через аргументы командной строки:
     * Используемые алгоритмы
-    * Количество точек (от 2 до 12)
-    * Аргумент для интерполяции (x)
+    * Размер шага
 3. Входные данные должны подаваться на стандартный ввод:
     * Значения каждой точки в формате "x<sub>i</sub> y<sub>i</sub>"
 4. Выходные данные должны подаваться на стандартный вывод:
@@ -59,7 +58,7 @@
 Функция для реализации интерполяции методом Лагранжа:
 
 ```clojure
-(defn lagrange-coefficient [points i x]
+(defn- lagrange-coefficient [points i x]
   (reduce
     (fn [acc j]
       (if (= i j)
@@ -81,15 +80,35 @@
 ## Пример одного цикла работы программы
 
 ```
-meldren@Mac-Sergej FunctionalProgrammingLab3 % clj -M -m ru.meldren.functionalprogramming.lab3.main -g lagrange -g linear -p 3 -a 5
-Enter point (x₁ y₁): 
-1 2
-Enter point (x₂ y₂): 
-100 101
-Enter point (x₃ y₃): 
--14 -13
-Lagrange interpolation result: 6.0
-Linear interpolation result: 6.0
+meldren@Mac-Sergej FunctionalProgrammingLab3 % clj -M -m ru.meldren.functionalprogramming.lab3.main -a linear -a lagrange 
+Enter point (x y): 
+0 0
+Enter point (x y): 
+1.571 1
+Linear interpolation result:
+0.00	1.00	2.00
+0.00	0.64	1.27
+Enter point (x y): 
+3.142 0
+Linear interpolation result:
+1.57	2.57	3.57
+1.00	0.36	-0.27
+Enter point (x y): 
+4.712 -1
+Linear interpolation result:
+3.14	4.14	5.14
+0.00	-0.64	-1.27
+Lagrange interpolation result:
+0.00	1.00	2.00	3.00	4.00	5.00
+0.00	0.97	0.84	0.12	-0.67	-1.03
+Enter point (x y): 
+12.568 0
+Linear interpolation result:
+4.71	5.71	6.71	7.71	8.71	9.71	10.71	11.71	12.71
+-1.00	-0.87	-0.75	-0.62	-0.49	-0.36	-0.24	-0.11	0.02
+Lagrange interpolation result:
+1.57	2.57	3.57	4.57	5.57	6.57	7.57	8.57	9.57	10.57	11.57	12.57
+1.00	0.37	-0.28	-0.91	-1.49	-1.95	-2.26	-2.38	-2.25	-1.84	-1.11	0.00
 ```
 
 ## Заключение
